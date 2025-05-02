@@ -1,0 +1,223 @@
+#include "hid_sensor_spec.h"
+// 3D Accelerometer 
+const unsigned char accel3_report_descriptor[] = { 
+    HID_USAGE_PAGE_SENSOR, 
+    HID_USAGE_SENSOR_TYPE_MOTION_ACCELEROMETER_3D, 
+     HID_COLLECTION(Physical), 
+        //feature reports (xmit/receive) 
+        HID_USAGE_PAGE_SENSOR, 
+        HID_USAGE_SENSOR_PROPERTY_REPORT_INTERVAL, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_32(0xFF,0xFF,0xFF,0xFF), 
+        HID_REPORT_SIZE(32), 
+        HID_REPORT_COUNT(1), 
+        HID_UNIT_EXPONENT(0), 
+        HID_FEATURE(Data_Var_Abs), 
+     
+        //input reports (transmit) 
+        HID_USAGE_PAGE_SENSOR, 
+        HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION_X_AXIS, 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+        HID_REPORT_SIZE(16), 
+        HID_REPORT_COUNT(1), 
+        // HID_USAGE_SENSOR_UNITS_G, 
+        HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+        HID_INPUT(Const_Var_Abs), 
+        HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION_Y_AXIS, 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+        HID_REPORT_SIZE(16), 
+        HID_REPORT_COUNT(1), 
+        // HID_USAGE_SENSOR_UNITS_G, 
+        HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+        HID_INPUT(Const_Var_Abs), 
+        HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION_Z_AXIS, 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+        HID_REPORT_SIZE(16), 
+        HID_REPORT_COUNT(1), 
+        // HID_USAGE_SENSOR_UNITS_G, 
+        HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+        HID_INPUT(Const_Var_Abs), 
+
+     HID_END_COLLECTION 
+    };
+
+
+const unsigned char accel3_report_descriptor[] = { 
+        HID_USAGE_PAGE_SENSOR, 
+        HID_USAGE_SENSOR_TYPE_MOTION_ACCELEROMETER_3D, 
+         HID_COLLECTION(Physical), 
+         
+         //feature reports (xmit/receive) 
+         HID_USAGE_PAGE_SENSOR, 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_8(5), 
+         HID_REPORT_SIZE(8), 
+         HID_REPORT_COUNT(1), 
+         HID_COLLECTION(Logical), 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE_NO_EVENTS, 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE_ALL_EVENTS, 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE_THRESHOLD_EVENTS, 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE_NO_EVENTS_WAKE, 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE_ALL_EVENTS_WAKE, 
+        HID_USAGE_SENSOR_PROPERTY_REPORTING_STATE_THRESHOLD_EVENTS_WAKE, 
+         HID_FEATURE(Data_Arr_Abs), 
+         HID_END_COLLECTION, 
+        HID_USAGE_SENSOR_PROPERTY_SENSOR_STATUS, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_32(0xFF,0xFF,0xFF,0xFF), 
+         HID_REPORT_SIZE(32), 
+         HID_REPORT_COUNT(1), 
+         HID_FEATURE(Data_Var_Abs), // up to VT_UI4 worth of status info 
+        HID_USAGE_SENSOR_PROPERTY_REPORT_INTERVAL, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_32(0xFF,0xFF,0xFF,0xFF), 
+        HID_REPORT_SIZE(32), 
+        HID_REPORT_COUNT(1), 
+        // HID_USAGE_SENSOR_UNITS_MILLISECOND, 
+        HID_UNIT_EXPONENT(0), 
+        HID_FEATURE(Data_Var_Abs), 
+        HID_USAGE_SENSOR_PROPERTY_SENSOR_CONNECTION_TYPE, // NAry 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_8(2), 
+        HID_REPORT_SIZE(8), 
+        HID_REPORT_COUNT(1), 
+        HID_COLLECTION(Logical), 
+        HID_USAGE_SENSOR_PROPERTY_CONNECTION_TYPE_PC_INTEGRATED, 
+    
+        HID_USAGE_SENSOR_PROPERTY_CONNECTION_TYPE_PC_ATTACHED, 
+        HID_USAGE_SENSOR_PROPERTY_CONNECTION_TYPE_PC_EXTERNAL, 
+        HID_FEATURE(Const_Arr_Abs), 
+        HID_END_COLLECTION, 
+        HID_USAGE_SENSOR_PROPERTY_CHANGE_SENSITIVITY_ABS, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_16(0xFF,0xFF), 
+         HID_REPORT_SIZE(16), 
+         HID_REPORT_COUNT(1), 
+         // HID_USAGE_SENSOR_UNITS_G, 
+         HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+         HID_FEATURE(Data_Var_Abs), 
+        HID_USAGE_SENSOR_DATA(HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION,HID_USAGE_SENSOR_DATA_MOD_MAX), 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+         HID_REPORT_SIZE(16), 
+         HID_REPORT_COUNT(1), 
+         // HID_USAGE_SENSOR_UNITS_G, 
+         HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+         HID_FEATURE(Data_Var_Abs), 
+        HID_USAGE_SENSOR_DATA(HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION,HID_USAGE_SENSOR_DATA_MOD_MIN), 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+         HID_REPORT_SIZE(16), 
+         HID_REPORT_COUNT(1), 
+         // HID_USAGE_SENSOR_UNITS_G, 
+         HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+        HID_FEATURE(Data_Var_Abs), 
+         
+         //input reports (transmit) 
+         HID_USAGE_PAGE_SENSOR, 
+         HID_USAGE_SENSOR_STATE, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_8(6), 
+         HID_REPORT_SIZE(8), 
+         HID_REPORT_COUNT(1), 
+        HID_COLLECTION(Logical), 
+         HID_USAGE_SENSOR_STATE_UNKNOWN, 
+         HID_USAGE_SENSOR_STATE_READY, 
+         HID_USAGE_SENSOR_STATE_NOT_AVAILABLE, 
+         HID_USAGE_SENSOR_STATE_NO_DATA, 
+         HID_USAGE_SENSOR_STATE_INITIALIZING, 
+         HID_USAGE_SENSOR_STATE_ACCESS_DENIED, 
+         HID_USAGE_SENSOR_STATE_ERROR, 
+        HID_INPUT(Const_Arr_Abs), 
+        HID_END_COLLECTION, 
+         HID_USAGE_SENSOR_EVENT, 
+        HID_LOGICAL_MIN_8(0), 
+        HID_LOGICAL_MAX_8(16), 
+         HID_REPORT_SIZE(8), 
+         HID_REPORT_COUNT(1), 
+         HID_COLLECTION(Logical), 
+        HID_USAGE_SENSOR_EVENT_UNKNOWN, 
+        HID_USAGE_SENSOR_EVENT_STATE_CHANGED, 
+        HID_USAGE_SENSOR_EVENT_PROPERTY_CHANGED, 
+        HID_USAGE_SENSOR_EVENT_DATA_UPDATED, 
+        HID_USAGE_SENSOR_EVENT_POLL_RESPONSE, 
+        HID_USAGE_SENSOR_EVENT_CHANGE_SENSITIVITY, 
+        HID_USAGE_SENSOR_EVENT_MAX_REACHED, 
+        HID_USAGE_SENSOR_EVENT_MIN_REACHED, 
+        HID_USAGE_SENSOR_EVENT_HIGH_THRESHOLD_CROSS_UPWARD, 
+        HID_USAGE_SENSOR_EVENT_HIGH_THRESHOLD_CROSS_DOWNWARD, 
+        HID_USAGE_SENSOR_EVENT_LOW_THRESHOLD_CROSS_UPWARD, 
+        HID_USAGE_SENSOR_EVENT_LOW_THRESHOLD_CROSS_DOWNWARD, 
+        HID_USAGE_SENSOR_EVENT_ZERO_THRESHOLD_CROSS_UPWARD, 
+        HID_USAGE_SENSOR_EVENT_ZERO_THRESHOLD_CROSS_DOWNWARD, 
+        HID_USAGE_SENSOR_EVENT_PERIOD_EXCEEDED, 
+        HID_USAGE_SENSOR_EVENT_FREQUENCY_EXCEEDED, 
+        HID_USAGE_SENSOR_EVENT_COMPLEX_TRIGGER, 
+        HID_INPUT(Const_Arr_Abs), 
+        HID_END_COLLECTION, 
+        
+        
+        HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION_X_AXIS, 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+         HID_REPORT_SIZE(16), 
+         HID_REPORT_COUNT(1), 
+         // HID_USAGE_SENSOR_UNITS_G, 
+         HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+         HID_INPUT(Const_Var_Abs), 
+         HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION_Y_AXIS, 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+         HID_REPORT_SIZE(16), 
+         HID_REPORT_COUNT(1), 
+         // HID_USAGE_SENSOR_UNITS_G, 
+         HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+         HID_INPUT(Const_Var_Abs), 
+         HID_USAGE_SENSOR_DATA_MOTION_ACCELERATION_Z_AXIS, 
+        HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+        HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+         HID_REPORT_SIZE(16), 
+         HID_REPORT_COUNT(1), 
+         // HID_USAGE_SENSOR_UNITS_G, 
+         HID_UNIT_EXPONENT(0x0E), // scale default unit Gs to “centi-Gs” to provide 2 digits past Gs decimal point 
+         HID_INPUT(Const_Var_Abs), 
+    
+         HID_END_COLLECTION 
+        };
+    
+
+
+// Device Orientation sensor 
+const unsigned char devor_report_descriptor[] = { 
+    HID_USAGE_PAGE_SENSOR, 
+    HID_USAGE_SENSOR_TYPE_ORIENTATION_DEVICE_ORIENTATION, 
+    HID_COLLECTION(Physical), 
+     
+    //feature reports (xmit/receive) 
+    HID_USAGE_PAGE_SENSOR, 
+     
+    //input reports (transmit) 
+    HID_USAGE_PAGE_SENSOR, 
+
+    HID_USAGE_SENSOR_DATA_ORIENTATION_QUATERNION, 
+    HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+    HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+    HID_REPORT_SIZE(16), 
+    HID_REPORT_COUNT(4), 
+    HID_USAGE_SENSOR_UNITS_NOT_SPECIFIED, 
+    HID_UNIT_EXPONENT(0x0E), 
+    HID_INPUT(Const_Arr_Abs), 
+    HID_USAGE_SENSOR_DATA_ORIENTATION_ROTATION_MATRIX, 
+    HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767) 
+    HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767) 
+    HID_REPORT_SIZE(16), 
+    HID_REPORT_COUNT(9), 
+    HID_USAGE_SENSOR_UNITS_NOT_SPECIFIED, 
+    HID_UNIT_EXPONENT(0x0F), 
+    HID_INPUT(Const_Arr_Abs), 
+    HID_END_COLLECTION 
+    };
