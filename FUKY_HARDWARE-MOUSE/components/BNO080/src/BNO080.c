@@ -43,13 +43,6 @@ static void IRAM_ATTR button_isr_handler(void* arg)
     // 更新上一次中断触发时间
     last_isr_time = current_time;
     // 当检测到按钮电平为 0 时，调用回调
-
-    if (gpio_get_level(BNO_CAL) == 0 && !Calibrate_button.isEnable) {
-        // 如果有函数指针，调用它
-        if (Calibrate_button.onButtonPressed) {
-          Calibrate_button.isEnable = true;
-        }
-    }
 }
 
 void Calibration_Change(){
@@ -710,7 +703,7 @@ bool bno080_init(spi_host_device_t HOST) {
 
     // 配置GPIO
     gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << BNO_BOOT) | (1ULL << BNO_RESET) | (1ULL << BNO_CS),
+        .pin_bit_mask = (1ULL << BNO_RESET) | (1ULL << BNO_CS),
         .mode = GPIO_MODE_OUTPUT,
     };
     gpio_config(&io_conf);

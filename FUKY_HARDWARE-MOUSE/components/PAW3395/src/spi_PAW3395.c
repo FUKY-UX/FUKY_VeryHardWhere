@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 
-static spi_device_handle_t PAW_spi;
+static spi_device_handle_t PAW3395_spi;
 static const char TAG[] = "PAW3395";
 
 
@@ -20,7 +20,7 @@ void PAW3395_init(spi_host_device_t HOST)
         .spics_io_num = -1,
         .queue_size = 7,
     };
-    spi_bus_add_device(HOST, &devcfg, &PAW_spi);
+    spi_bus_add_device(HOST, &devcfg, &PAW3395_spi);
     
     //CS引脚初始化
     gpio_set_level(PAW_CS, 1);
@@ -102,7 +102,7 @@ uint8_t SPI_SendReceive(uint8_t data)
         .rx_buffer = &rx_data
     };
     
-    spi_device_transmit(PAW_spi, &t);
+    spi_device_transmit(PAW3395_spi, &t);
     return rx_data;
 }
 
@@ -122,7 +122,7 @@ uint8_t read_register(uint8_t address)
     };
     gpio_set_level(PAW_CS, 0);
     esp_rom_delay_us(1);
-    spi_device_polling_transmit(PAW_spi, &t);
+    spi_device_polling_transmit(PAW3395_spi, &t);
     gpio_set_level(PAW_CS, 1);
     esp_rom_delay_us(5);
     temp = t.rx_data[1];
@@ -143,11 +143,76 @@ void write_register(uint8_t address, uint8_t value)
     };
     gpio_set_level(PAW_CS, 0);
     esp_rom_delay_us(1);
-    spi_device_polling_transmit(PAW_spi, &t);
+    spi_device_polling_transmit(PAW3395_spi, &t);
     gpio_set_level(PAW_CS, 1);
     esp_rom_delay_us(5);
-
 }
+
+void ResetChip(void)
+{
+    gpio_set_level(PAW_NRESET, 0);
+    esp_rom_delay_us(1);
+    gpio_set_level(PAW_NRESET, 1);
+    esp_rom_delay_us(1000); // 等待芯片复位完成
+}
+
+uint8_t* Motion_Burst()
+{
+    // 定义要发送的地址字节
+    uint8_t tx_address = 0x00 | (0x16 & ADDR_MASK);
+    // 动态分配12字节的接收缓冲区
+    uint8_t *data_RX = (uint8_t *)malloc(12 * sizeof(uint8_t));
+    if (data_RX == NULL)
+    {
+        printf("Memory allocation failed!\n");
+        return NULL;  // 内存分配失败
+    }
+
+    // 配置SPI事务
+    spi_transaction_t t = {
+        .flags = 0,
+        .rxlength = 96,               // 接收96位数据
+        .length = 8 + 96,             // 发送8位地址 + 接收96位数据
+        .tx_buffer  = &tx_address,
+        .rx_buffer = data_RX          // 接收缓冲区
+    };
+
+    // 拉低CS引脚（开始SPI通信）
+    gpio_set_level(PAW_CS, 0);
+    esp_rom_delay_us(1);             // 等待t(NCS-SCLK)
+
+    // SPI传输
+    esp_err_t ret = spi_device_polling_transmit(PAW3395_spi, &t);
+    if (ret != ESP_OK)
+    {
+        printf("SPI transaction failed!\n");
+        gpio_set_level(PAW_CS, 1);   // 结束SPI通信
+        free(data_RX);               // 释放内存
+        return NULL;
+    }
+
+    // 拉高CS引脚（结束SPI通信）
+    gpio_set_level(PAW_CS, 1);
+    esp_rom_delay_us(1);
+
+    return data_RX;  // 返回接收数据指针
+}
+
+int8_t  GetButtonState()
+{
+    int8_t mousebutton = 0;
+    if (gpio_get_level(LClick) == 1) 
+    {
+    mousebutton |= 0x01;
+    }
+    if (gpio_get_level(RClick) == 1) 
+    {
+    mousebutton |= 0x02;
+    }
+    //ESP_LOGI("鼠标功能", "按下按钮: %x", mousebutton);
+    return mousebutton;
+}
+
 /*
  *上电初始化寄存器设置
  */
@@ -463,67 +528,4 @@ esp_err_t set_chip_mode(ChipMode mode)
     return ESP_OK;
 }
 
-void ResetChip(void)
-{
-    gpio_set_level(PAW_NRESET, 0);
-    esp_rom_delay_us(1);
-    gpio_set_level(PAW_NRESET, 1);
-    esp_rom_delay_us(1000); // 等待芯片复位完成
-}
 
-uint8_t* Motion_Burst()
-{
-    // 定义要发送的地址字节
-    uint8_t tx_address = 0x00 | (0x16 & ADDR_MASK);
-    // 动态分配12字节的接收缓冲区
-    uint8_t *data_RX = (uint8_t *)malloc(12 * sizeof(uint8_t));
-    if (data_RX == NULL)
-    {
-        printf("Memory allocation failed!\n");
-        return NULL;  // 内存分配失败
-    }
-
-    // 配置SPI事务
-    spi_transaction_t t = {
-        .flags = 0,
-        .rxlength = 96,               // 接收96位数据
-        .length = 8 + 96,             // 发送8位地址 + 接收96位数据
-        .tx_buffer  = &tx_address,
-        .rx_buffer = data_RX          // 接收缓冲区
-    };
-
-    // 拉低CS引脚（开始SPI通信）
-    gpio_set_level(PAW_CS, 0);
-    esp_rom_delay_us(1);             // 等待t(NCS-SCLK)
-
-    // SPI传输
-    esp_err_t ret = spi_device_polling_transmit(PAW_spi, &t);
-    if (ret != ESP_OK)
-    {
-        printf("SPI transaction failed!\n");
-        gpio_set_level(PAW_CS, 1);   // 结束SPI通信
-        free(data_RX);               // 释放内存
-        return NULL;
-    }
-
-    // 拉高CS引脚（结束SPI通信）
-    gpio_set_level(PAW_CS, 1);
-    esp_rom_delay_us(1);
-
-    return data_RX;  // 返回接收数据指针
-}
-
-int8_t  GetButtonState()
-{
-    int8_t mousebutton = 0;
-    if (gpio_get_level(LClick) == 1) 
-    {
-    mousebutton |= 0x01;
-    }
-    if (gpio_get_level(RClick) == 1) 
-    {
-    mousebutton |= 0x02;
-    }
-    //ESP_LOGI("鼠标功能", "按下按钮: %x", mousebutton);
-    return mousebutton;
-}
