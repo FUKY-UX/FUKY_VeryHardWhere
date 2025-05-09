@@ -60,6 +60,8 @@
         "chrono": "c",
         "span": "c",
         "bitset": "c",
-        "swspi_paw3805.h": "c"
+        "swspi_paw3805.h": "c",
+        "esp_timer.h": "c",
+        "fuky_main.h": "c"
     }
 }

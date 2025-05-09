@@ -1,4 +1,5 @@
 //#include "spi_PAW3395.h"
+#include "driver/adc.h"
 #include "driver/rtc_io.h"
 #include "swSPI_PAW3805.h"
 #include "esp_log.h"
@@ -6,6 +7,7 @@
 #include "bno080.h"
 #include "ble_hidd.h"
 #include "esp_timer.h"
+#include "FUKY_main.h"
 //共享数据结构
 typedef struct 
 {
@@ -22,7 +24,7 @@ SharedState_t;
 #define MOSI    6
 #define MISO    3
 #define SCLK    4
-
+#define PRESS    2
 
 #define M_CLICK    18
 #define L_CLICK    16
@@ -62,6 +64,7 @@ void MouseTask(void *pvParameters)
     // uint8_t move_index = 0;
 
     // 另一种延后发射数据的方法，应该能更好地滤除异常值
+    #if DATA_POST_PROCESSING_ENABLED
     typedef struct {
         int8_t x;
         int8_t y;
@@ -69,7 +72,7 @@ void MouseTask(void *pvParameters)
     MoveData move_buffer[MOVE_BUFFER_SIZE] = {0};
     uint8_t buffer_count = 0;  // 当前缓冲数据量
     uint8_t buffer_index = 0; // 当前写入位置
-
+    #endif
 
     while (1) 
     {
@@ -97,7 +100,6 @@ void MouseTask(void *pvParameters)
             stable_btn[i] = (sum * 10 / BTN_HISTORY_SIZE) >= 5; // 整数运算优化
         }
 
-
         //====== 组合按钮状态 ======//
         uint8_t button_state = 0;
         button_state |= (!stable_btn[0]) << 0; // 左键
@@ -106,7 +108,8 @@ void MouseTask(void *pvParameters)
         
         //0000000000移动状态更新
         PAW3805_Function(&local_raw_x, &local_raw_y);
-
+        
+#if DATA_POST_PROCESSING_ENABLED
         // 将新数据存入缓冲区
         move_buffer[buffer_index].x = local_raw_x;
         move_buffer[buffer_index].y = local_raw_y;
@@ -151,20 +154,16 @@ void MouseTask(void *pvParameters)
         {
             continue;
         }
-            // 计算移动平均值（带符号处理）-------弃用，引入延迟而且无法解决问题
-        // int16_t x_sum = 0, y_sum = 0;
-        // for(int i=0; i<MOVE_HISTORY_SIZE; i++) {
-        //     x_sum += x_history[i];
-        //     y_sum += y_history[i];
-        // }
-        // int8_t filtered_x = (int8_t)(x_sum / MOVE_HISTORY_SIZE);
-        // int8_t filtered_y = (int8_t)(y_sum / MOVE_HISTORY_SIZE);
-
         IsStop = (send_x == 0) && (send_y == 0);
+#else
+        /* 原始数据直通模式 */
+        send_x = local_raw_x;
+        send_y = local_raw_y;
+        IsStop = (local_raw_x == 0) && (local_raw_y == 0);
+#endif
         state->IsMouseStop = IsStop;
-
         send_mouse_value(button_state,local_raw_x,local_raw_y);
-        esp_rom_delay_us(750);//过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
+        esp_rom_delay_us(800);//过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
     }
         
 
@@ -209,7 +208,7 @@ void IMUTask(void *pvParameters)
             }
             // 更新最后发送数据
             memcpy(&last_sent_data, &local_imu_data, sizeof(IMUData_t));
-            esp_rom_delay_us(250);//暂时加点延迟，到时候发现回报率还是不够再搞掉
+            esp_rom_delay_us(500);//暂时加点延迟，到时候发现回报率还是不够再搞掉
             //ESP_LOGI("IMU","数据");
         }
 

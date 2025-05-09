@@ -249,6 +249,7 @@ static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GAT
 // static const uint16_t char_format_uuid = ESP_GATT_UUID_CHAR_PRESENT_FORMAT;保证通用性的东西，懒得搞
 static const uint16_t IMU_svc = 0xF233;
 static const uint16_t IMU_Data_uuid = 0xF666;
+static const uint16_t Pressure_Data_uuid = 0xF667;  // 压感数据UUID
 uint16_t IMU_att_tbl[IMU_IDX_NB];
 
 /// Full HRS Database Description - Used to add attributes into the database
@@ -275,7 +276,7 @@ static const esp_gatts_attr_db_t IMU_att_db[IMU_IDX_NB] =
         (uint8_t *)&character_client_config_uuid,
         (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE),
         sizeof(uint16_t), 0,
-        NULL}}
+        NULL}},
 
     // [IMU_IDX_REP_REF]       = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid,
     //     ESP_GATT_PERM_READ,
@@ -285,6 +286,25 @@ static const esp_gatts_attr_db_t IMU_att_db[IMU_IDX_NB] =
     // //IMU report Characteristic Declaration
     // [IMU_IDX_IMUIN_REP_REF]  = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&char_format_uuid, ESP_GATT_PERM_READ,
     //                                                     sizeof(struct prf_char_pres_fmt), 0, NULL}},
+    
+    // 压感数据特性声明
+    [IMU_IDX_PRESSURE_CHAR]    = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid,
+        ESP_GATT_PERM_READ,
+        CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE,
+        (uint8_t *)&char_prop_read_notify}},
+
+    // 压感数据特性值
+    [IMU_IDX_PRESSURE_VAL]     = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&Pressure_Data_uuid,
+        ESP_GATT_PERM_READ,
+        sizeof(PressureData_t), 0,
+        NULL}},
+
+    // 压感数据客户端配置描述符
+    [IMU_IDX_PRESSURE_CCC]     = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, 
+        (uint8_t *)&character_client_config_uuid,
+        (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE),
+        sizeof(uint16_t), 0,
+        NULL}}
 };
 
 /// Full Hid device Database Description - Used to add attributes into the database
@@ -470,6 +490,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 ESP_LOGI("GATT", "IMU AttrTbl Created, %d handles:", param->add_attr_tab.num_handle);
 
                 imu_env.IMU_att_handle = imu_env.att_tbl[IMU_IDX_IMUIN_VAL];
+                imu_env.Pressure_att_handle = imu_env.att_tbl[IMU_IDX_PRESSURE_VAL];
                 esp_ble_gatts_start_service(imu_env.att_tbl[IMU_IDX_SVC]);
             }
             else 

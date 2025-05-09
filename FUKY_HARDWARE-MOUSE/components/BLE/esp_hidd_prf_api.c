@@ -16,6 +16,9 @@
 // HID mouse input report length
 #define HID_IMU_IN_RPT_LEN          14
 
+// HID pressure input report length
+#define HID_PRESSURE_IN_RPT_LEN     2
+
 esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
 {
     esp_err_t hidd_status;
@@ -97,6 +100,17 @@ void esp_hidd_send_imu_value(uint16_t conn_id,int16_t lin_accel_x,int16_t lin_ac
     buffer[11] = (quat_k >> 8) & 0xFF;
     buffer[12] = quat_w & 0xFF;
     buffer[13] = (quat_w >> 8) & 0xFF;
+    
+    esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.IMU_att_handle, sizeof(buffer), buffer, false);
+}
 
-    esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id,imu_env.IMU_att_handle, sizeof(buffer), buffer, false);
+void esp_hidd_send_pressure_value(uint16_t conn_id, int16_t pressure)
+{
+    uint8_t buffer[HID_PRESSURE_IN_RPT_LEN];
+
+    // 按照小端序 (Little Endian) 填充压感数据
+    buffer[0] = pressure & 0xFF;
+    buffer[1] = (pressure >> 8) & 0xFF;
+
+    esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.Pressure_att_handle, sizeof(buffer), buffer, false);
 }

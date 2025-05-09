@@ -24,6 +24,11 @@ typedef struct {
     int16_t quat_w;
 } __attribute__((packed)) IMUData_t;
 
+// 定义压感数据结构体
+typedef struct {
+    int16_t pressure;    // 压感值
+} __attribute__((packed)) PressureData_t;
+
 //HID BLE profile log tag
 #define HID_LE_PRF_TAG                        "HID_LE_PRF"
 
@@ -110,6 +115,11 @@ enum
     IMU_IDX_IMUIN_VAL,
     IMU_IDX_IMUIN_CCC,
     IMU_IDX_REP_REF,
+    
+    // 压感数据特性
+    IMU_IDX_PRESSURE_CHAR,
+    IMU_IDX_PRESSURE_VAL,
+    IMU_IDX_PRESSURE_CCC,
 
     IMU_IDX_NB,
 };
@@ -312,6 +322,7 @@ typedef struct {
     uint16_t att_tbl[IMU_IDX_NB];
     esp_gatt_if_t IMU_gatt_if;
     uint16_t IMU_att_handle;
+    uint16_t Pressure_att_handle;
 } imu_env_t;
 extern imu_env_t imu_env;
 
