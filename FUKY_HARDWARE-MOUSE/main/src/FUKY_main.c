@@ -15,11 +15,6 @@ typedef struct
 }
 SharedState_t;
 
-void delay_ns_Main(uint32_t ns) 
-{
-    uint32_t cycles = ns * (CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ) / 1000;
-    for (volatile int i = 0; i < cycles; i++);
-}
 //static const char TAG[] = "FUKYMOUSE";
 
 
@@ -168,6 +163,7 @@ void MouseTask(void *pvParameters)
         state->IsMouseStop = IsStop;
 
         send_mouse_value(button_state,local_raw_x,local_raw_y);
+        esp_rom_delay_us(750);
     }
         
 
@@ -185,7 +181,7 @@ void IMUTask(void *pvParameters)
             if(!state->IsMouseStop)
             {
                 xSemaphoreGive(state->mutex);
-                vTaskDelay(pdMS_TO_TICKS(1));
+                vTaskDelay(pdMS_TO_TICKS(20));
                 continue;
             }
             xSemaphoreGive(state->mutex);
