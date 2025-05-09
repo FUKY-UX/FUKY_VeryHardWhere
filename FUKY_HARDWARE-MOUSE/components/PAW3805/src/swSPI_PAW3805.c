@@ -69,6 +69,7 @@ void init_paw3805ek(spi_host_device_t HOST)
         .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&io_conf);
+
     gpio_set_level(OPT_CS, 1);
     gpio_set_level(OPT_SCLK, 1);
     gpio_set_level(REG_RST, 0);
