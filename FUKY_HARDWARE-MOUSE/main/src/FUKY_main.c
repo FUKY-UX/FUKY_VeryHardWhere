@@ -23,10 +23,11 @@ SharedState_t;
 #define MISO    3
 #define SCLK    4
 
+
 #define M_CLICK    18
 #define L_CLICK    16
 #define R_CLICK    17
-#define BTN_HISTORY_SIZE 40 //按键均值消抖
+#define BTN_HISTORY_SIZE 20 //按键均值消抖
 //#define MOVE_HISTORY_SIZE 5  // 移动均值消抖，5个样本够了-------弃用，增加延迟和粘滞手感
 #define MOVE_BUFFER_SIZE 3    // 连续相同负值的判定阈值
 #define FUKY_SPI_HOST    SPI2_HOST
@@ -163,7 +164,7 @@ void MouseTask(void *pvParameters)
         state->IsMouseStop = IsStop;
 
         send_mouse_value(button_state,local_raw_x,local_raw_y);
-        esp_rom_delay_us(750);
+        esp_rom_delay_us(750);//过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
     }
         
 
@@ -172,12 +173,16 @@ void MouseTask(void *pvParameters)
 void IMUTask(void *pvParameters) 
 {
     IMUData_t local_imu_data;
+     IMUData_t last_sent_data = {0};
     SharedState_t *state = (SharedState_t *)pvParameters;
+    bool ShouldSendIMUData;
     while (1) 
     {
+        ShouldSendIMUData = false; 
         //带锁访问共享状态
         if (xSemaphoreTake(state->mutex, 0)) 
         {
+            ShouldSendIMUData = state->IsMouseStop;
             if(!state->IsMouseStop)
             {
                 xSemaphoreGive(state->mutex);
@@ -186,10 +191,29 @@ void IMUTask(void *pvParameters)
             }
             xSemaphoreGive(state->mutex);
         }
-        local_imu_data = bno080_Function();
-        //带锁访问共享状态
-        SendIMUData(local_imu_data.lin_accel_x, local_imu_data.lin_accel_y, local_imu_data.lin_accel_z, local_imu_data.quat_i, local_imu_data.quat_j, local_imu_data.quat_k, local_imu_data.quat_w);
-        //ESP_LOGI("IMU","数据");
+        if(ShouldSendIMUData)
+        {
+            // 防止发送相同数据,几乎不会出现完全相同的imu和加速度数据
+            if(
+                local_imu_data.lin_accel_x != last_sent_data.lin_accel_x ||
+                local_imu_data.lin_accel_y != last_sent_data.lin_accel_y ||
+                local_imu_data.lin_accel_z != last_sent_data.lin_accel_z ||
+                local_imu_data.quat_i != last_sent_data.quat_i ||
+                local_imu_data.quat_j != last_sent_data.quat_j ||
+                local_imu_data.quat_k != last_sent_data.quat_k ||
+                local_imu_data.quat_w != last_sent_data.quat_w
+            )
+            {
+                local_imu_data = bno080_Function();
+                SendIMUData(local_imu_data.lin_accel_x, local_imu_data.lin_accel_y, local_imu_data.lin_accel_z, local_imu_data.quat_i, local_imu_data.quat_j, local_imu_data.quat_k, local_imu_data.quat_w);    
+            }
+            // 更新最后发送数据
+            memcpy(&last_sent_data, &local_imu_data, sizeof(IMUData_t));
+            esp_rom_delay_us(250);//暂时加点延迟，到时候发现回报率还是不够再搞掉
+            //ESP_LOGI("IMU","数据");
+        }
+
+
     }
 
 }
