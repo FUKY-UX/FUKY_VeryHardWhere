@@ -6,5 +6,8 @@ idf_component_register(
     REQUIRES PAW3805
     REQUIRES BNO080
     REQUIRES BLE
+    REQUIRES driver
+    REQUIRES esp_adc
+    REQUIRES esp_timer
+    REQUIRES freertos
 )
-

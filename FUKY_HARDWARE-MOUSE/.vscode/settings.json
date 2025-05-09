@@ -62,6 +62,8 @@
         "bitset": "c",
         "swspi_paw3805.h": "c",
         "esp_timer.h": "c",
-        "fuky_main.h": "c"
+        "fuky_main.h": "c",
+        "rtc_io.h": "c",
+        "adc.h": "c"
     }
 }
