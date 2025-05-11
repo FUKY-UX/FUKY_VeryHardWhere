@@ -29,6 +29,11 @@ typedef struct {
     int16_t pressure;    // 压感值
 } __attribute__((packed)) PressureData_t;
 
+// 定义鼠标按键状态结构体
+typedef struct {
+    uint8_t button_state;    // 按键状态，bit0=左键，bit1=右键，bit2-4预留
+} __attribute__((packed)) ButtonStateData_t;
+
 //HID BLE profile log tag
 #define HID_LE_PRF_TAG                        "HID_LE_PRF"
 
@@ -120,6 +125,11 @@ enum
     IMU_IDX_PRESSURE_CHAR,
     IMU_IDX_PRESSURE_VAL,
     IMU_IDX_PRESSURE_CCC,
+    
+    // 鼠标按键状态特性
+    IMU_IDX_BUTTON_STATE_CHAR,
+    IMU_IDX_BUTTON_STATE_VAL,
+    IMU_IDX_BUTTON_STATE_CCC,
 
     IMU_IDX_NB,
 };
@@ -323,6 +333,7 @@ typedef struct {
     esp_gatt_if_t IMU_gatt_if;
     uint16_t IMU_att_handle;
     uint16_t Pressure_att_handle;
+    uint16_t Button_State_att_handle;
 } imu_env_t;
 extern imu_env_t imu_env;
 

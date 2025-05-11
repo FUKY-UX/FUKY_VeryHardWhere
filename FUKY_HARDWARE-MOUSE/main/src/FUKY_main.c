@@ -14,7 +14,7 @@ typedef struct
 {
     SemaphoreHandle_t mutex;  // 互斥锁句柄
     bool IsMouseStop;
-    
+    bool IsMouseFloating;
     // 压敏电阻历史数据
     int adc_max_value;        // 历史最大值
     int adc_min_value;        // 历史最小值
@@ -42,6 +42,7 @@ SharedState_t;
 SharedState_t shared_state = 
 {
     .IsMouseStop = false,
+    .IsMouseFloating = false,
     .mutex = NULL,
     .adc_max_value = 0,
     .adc_min_value = 4095,
@@ -134,18 +135,23 @@ void MouseTask(void *pvParameters)
 {
     bool IsStop;//用于判断鼠标是不是停下了
     int8_t local_raw_x = 0, local_raw_y = 0;
-    int8_t send_x = 0 , send_y = 0;
-    int8_t Repeat_Counter = 0,Last_Value_x = 0,Last_Value_y = 0;
     SharedState_t *state = (SharedState_t *)pvParameters;
-
-   //按钮的均值滤波消抖
+    //按钮逻辑
+    //按钮的均值滤波消抖
     uint8_t btn_history[3][BTN_HISTORY_SIZE] = {0}; // [L, R, M][history]
     uint8_t history_index = 0;
     bool stable_btn[3] = {1, 1, 1}; // 稳定后的状态
-    // 另一种延后发射数据的方法，应该能更好地滤除异常值
+    bool local_IsMouseFloating = false;
 
     while (1) 
     {
+
+        if (xSemaphoreTake(state->mutex, 0)) 
+        {
+             local_IsMouseFloating = state->IsMouseFloating;
+            xSemaphoreGive(state->mutex);
+        }
+
         //====== 按钮状态更新👇 ======//
         bool current_btn[3] = {
             gpio_get_level(L_CLICK),
@@ -178,17 +184,23 @@ void MouseTask(void *pvParameters)
 
         //====== 移动状态更新👇 ======//
         PAW3805_Function(&local_raw_x, &local_raw_y);
-        
-        // 原始数据直通
-        send_x = local_raw_x;
-        send_y = local_raw_y;
-        IsStop = (local_raw_x == 0) && (local_raw_y == 0);
+        ESP_LOGI("鼠标", "X=%d,     Y=%d",local_raw_x,local_raw_y);
 
+        IsStop = (local_raw_x == 0) && (local_raw_y == 0);
         state->IsMouseStop = IsStop;
+        //====== 移动状态更新👆 ======//
+        if(local_IsMouseFloating)
+        {
+            SendButtonState(button_state);
+            esp_rom_delay_us(800);
+            continue;
+        }
         send_mouse_value(button_state,local_raw_x,local_raw_y);
         esp_rom_delay_us(800);
+
         //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
-        //====== 移动状态更新👆 ======//
+
+        // 正常就只用HID发送按钮
     }
         
 
@@ -208,13 +220,6 @@ int16_t PressureTask()
             // 计算压力百分比
             pressure_percentage = (int16_t)calculate_pressure_percentage(adc_raw);
             
-            // 使用ESP_LOGI代替printf，更安全且支持格式化输出
-            // ESP_LOGI
-            // (
-            //     "PRESSURE", "压敏电阻原始ADC值: %d, 压力百分比: %d%%, 最大值: %d, 最小值: %d, 变化量: %d", 
-            //         adc_raw, pressure_percentage, shared_state.adc_max_value, shared_state.adc_min_value, shared_state.adc_max_delta
-            // );
-            
         } 
         else 
         {
@@ -229,28 +234,26 @@ void IMUTask(void *pvParameters)
     bool IsFirstStopDetect = true;
     bool IsFloating = false;
     IMUData_t local_imu_data;
-    IMUData_t last_sent_data = {0};
     SharedState_t *state = (SharedState_t *)pvParameters;
-    
-    // 用于计算加速度阈值的变量
-    int16_t MovingThreshold = 0;
-    int16_t MovingThresholdAbs = 0;
-    float MovingThresholdMagnitude = 0.0f;
     
     // 初始化
     state->adc_max_value = adc1_get_raw(ADC1_CHANNEL_1); // PRESS引脚对应的ADC通道
     state->adc_min_value = adc1_get_raw(ADC1_CHANNEL_1);
-    
+
+
     while (1) 
     {
         // 读取IMU数据,无论如何都得一直读取，不然数据会挤爆缓存
         local_imu_data = bno080_Function();
+
+
         //带锁访问共享状态
         if (xSemaphoreTake(state->mutex, 0)) 
         {
             if(!state->IsMouseStop) //如果光电还有读数，释放锁并延迟20ms再尝试读取,鼠标被判断为正常使用
             {
                 IsFloating =false;
+                state->IsMouseFloating = false;
                 IsFirstStopDetect = true;//非鼠标停下，就是鼠标正在运动，这时将鼠标的停止检测标志设为未检测到停止
                 xSemaphoreGive(state->mutex);//读取完鼠标是否停下状态后就可以释放锁了，以便鼠标核心写入鼠标状态 
                 //vTaskDelay(pdMS_TO_TICKS(20));//不要延迟，不然bno080没刷新数据会陈旧
@@ -267,38 +270,37 @@ void IMUTask(void *pvParameters)
             // IMU加速度求和，这里测试了静止时的鼠标读数，一般为20以下，少数时候会飙到30，极少数会到50
             
             // 打印加速度阈值信息
-            ESP_LOGI("IMU", "加速度 - 总和: %d,     X=%d,     Y=%d,     Z=%d ", MovingThreshold,local_imu_data.lin_accel_x,local_imu_data.lin_accel_y,local_imu_data.lin_accel_z);
+            ESP_LOGI("IMU", "加速度 -   X=%d,     Y=%d,     Z=%d ",local_imu_data.lin_accel_x,local_imu_data.lin_accel_y,local_imu_data.lin_accel_z);
 
             // 如果加速度速度大于设定阈值，就判断鼠标浮起
             if(abs(local_imu_data.lin_accel_z) > 60)
             {
                 IsFloating = true; // Isfloating只会在光电有读数的时候被设为false
-                ESP_LOGE("检测", "似乎抬起来了:%d", MovingThreshold);
+                ESP_LOGE("检测", "似乎抬起来了");
                 continue;
             }
             ESP_LOGI("检测", "没抬起来");// 如果加速度速度小于设定阈值，就判断鼠标只是正常使用，继续检测
         }
 
-
         if(IsFloating)
         {
             ESP_LOGW("鼠标","悬浮模式");
+            if (xSemaphoreTake(state->mutex, 0)) 
+            {
+                state->IsMouseFloating = true;
+                xSemaphoreGive(state->mutex);
+            }
             local_imu_data = bno080_Function();
             SendIMUData(local_imu_data.lin_accel_x, local_imu_data.lin_accel_y, local_imu_data.lin_accel_z, //加速度
                 local_imu_data.quat_i, local_imu_data.quat_j, local_imu_data.quat_k, local_imu_data.quat_w);    //旋转
             // 更新最后发送数据并发送压力数据
             SendPressureData(PressureTask());
-            memcpy(&last_sent_data, &local_imu_data, sizeof(IMUData_t));
-            //esp_rom_delay_us(500);//暂时加点延迟，到时候发现回报率还是不够再搞掉
-            //vTaskDelay(pdMS_TO_TICKS(1));
+            // 用蓝牙发送按键状态
+            continue;
         }
+
  
     }
-
-}
-
-void GetMouseState(void *pvParameters)
-{
 
 }
 

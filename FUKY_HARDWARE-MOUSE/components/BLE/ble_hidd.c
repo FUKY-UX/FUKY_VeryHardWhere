@@ -156,6 +156,11 @@ void SendPressureData(int16_t pressure)
     esp_hidd_send_pressure_value(hid_conn_id, pressure);
 }
 
+void SendButtonState(uint8_t button_state)
+{
+    esp_hidd_send_button_state(hid_conn_id, button_state);
+}
+
 void send_mouse_value(uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y)
 {
     esp_hidd_send_mouse_value(hid_conn_id,mouse_button,mickeys_x,mickeys_y);

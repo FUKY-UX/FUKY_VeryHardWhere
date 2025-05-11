@@ -250,6 +250,7 @@ static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GAT
 static const uint16_t IMU_svc = 0xF233;
 static const uint16_t IMU_Data_uuid = 0xF666;
 static const uint16_t Pressure_Data_uuid = 0xF667;  // 压感数据UUID
+static const uint16_t Button_State_uuid = 0xF668;  // 鼠标按键状态UUID
 uint16_t IMU_att_tbl[IMU_IDX_NB];
 
 /// Full HRS Database Description - Used to add attributes into the database
@@ -301,6 +302,25 @@ static const esp_gatts_attr_db_t IMU_att_db[IMU_IDX_NB] =
 
     // 压感数据客户端配置描述符
     [IMU_IDX_PRESSURE_CCC]     = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, 
+        (uint8_t *)&character_client_config_uuid,
+        (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE),
+        sizeof(uint16_t), 0,
+        NULL}},
+        
+    // 鼠标按键状态特性声明
+    [IMU_IDX_BUTTON_STATE_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid,
+        ESP_GATT_PERM_READ,
+        CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE,
+        (uint8_t *)&char_prop_read_notify}},
+
+    // 鼠标按键状态特性值
+    [IMU_IDX_BUTTON_STATE_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&Button_State_uuid,
+        ESP_GATT_PERM_READ,
+        sizeof(ButtonStateData_t), 0,
+        NULL}},
+
+    // 鼠标按键状态客户端配置描述符
+    [IMU_IDX_BUTTON_STATE_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, 
         (uint8_t *)&character_client_config_uuid,
         (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE),
         sizeof(uint16_t), 0,
@@ -491,6 +511,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
 
                 imu_env.IMU_att_handle = imu_env.att_tbl[IMU_IDX_IMUIN_VAL];
                 imu_env.Pressure_att_handle = imu_env.att_tbl[IMU_IDX_PRESSURE_VAL];
+                imu_env.Button_State_att_handle = imu_env.att_tbl[IMU_IDX_BUTTON_STATE_VAL];
                 esp_ble_gatts_start_service(imu_env.att_tbl[IMU_IDX_SVC]);
             }
             else 
