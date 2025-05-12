@@ -175,6 +175,8 @@ void esp_hidd_send_imu_value(uint16_t conn_id,int16_t lin_accel_x,int16_t lin_ac
 
 void esp_hidd_send_pressure_value(uint16_t conn_id, int16_t pressure);
 
+void esp_hidd_send_button_state(uint16_t conn_id, uint8_t button_state);
+
 #ifdef __cplusplus
 }
 #endif

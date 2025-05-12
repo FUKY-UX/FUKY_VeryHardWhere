@@ -19,6 +19,9 @@
 // HID pressure input report length
 #define HID_PRESSURE_IN_RPT_LEN     2
 
+// HID button state input report length
+#define HID_BUTTON_STATE_IN_RPT_LEN 1
+
 esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
 {
     esp_err_t hidd_status;
@@ -113,4 +116,14 @@ void esp_hidd_send_pressure_value(uint16_t conn_id, int16_t pressure)
     buffer[1] = (pressure >> 8) & 0xFF;
 
     esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.Pressure_att_handle, sizeof(buffer), buffer, false);
+}
+
+void esp_hidd_send_button_state(uint16_t conn_id, uint8_t button_state)
+{
+    uint8_t buffer[HID_BUTTON_STATE_IN_RPT_LEN];
+
+    // 填充按键状态数据
+    buffer[0] = button_state;
+
+    esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.Button_State_att_handle, sizeof(buffer), buffer, false);
 }
