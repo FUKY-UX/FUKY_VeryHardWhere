@@ -151,7 +151,7 @@ void SendIMUData(int16_t AccX,int16_t AccY,int16_t AccZ,int16_t QuatI,int16_t Qu
     esp_hidd_send_imu_value(hid_conn_id, AccX, AccY, AccZ, QuatI, QuatJ, QuatK, QuatW);
 }
 
-void SendPressureData(int16_t pressure)
+void SendPressureData(uint16_t pressure)
 {
     esp_hidd_send_pressure_value(hid_conn_id, pressure);
 }

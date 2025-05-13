@@ -107,15 +107,22 @@ void esp_hidd_send_imu_value(uint16_t conn_id,int16_t lin_accel_x,int16_t lin_ac
     esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.IMU_att_handle, sizeof(buffer), buffer, false);
 }
 
-void esp_hidd_send_pressure_value(uint16_t conn_id, int16_t pressure)
+void esp_hidd_send_pressure_value(uint16_t conn_id, uint16_t pressure)
 {
     uint8_t buffer[HID_PRESSURE_IN_RPT_LEN];
 
-    // 按照小端序 (Little Endian) 填充压感数据
-    buffer[0] = pressure & 0xFF;
-    buffer[1] = (pressure >> 8) & 0xFF;
+    // 修改为大端序 (Big Endian) 填充压感数据，这样Python端使用小端序解析时能得到正确的值
+    buffer[0] = (pressure >> 8) & 0xFF;  // 高字节在前
+    buffer[1] = pressure & 0xFF;         // 低字节在后
 
-    esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.Pressure_att_handle, sizeof(buffer), buffer, false);
+    // 打印发送的数据
+    ESP_LOGI("BLE_PRESSURE", "发送压力值: %u (0x%04X), 高字节: 0x%02X, 低字节: 0x%02X", 
+             pressure, pressure, buffer[0], buffer[1]);
+             
+    // 检查连接ID是否有效
+    if (conn_id != 0xFFFF && imu_env.IMU_gatt_if != ESP_GATT_IF_NONE) {
+        esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.Pressure_att_handle, sizeof(buffer), buffer, false);
+    }
 }
 
 void esp_hidd_send_button_state(uint16_t conn_id, uint8_t button_state)

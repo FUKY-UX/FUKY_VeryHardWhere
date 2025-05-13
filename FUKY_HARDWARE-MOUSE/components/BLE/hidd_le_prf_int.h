@@ -26,7 +26,7 @@ typedef struct {
 
 // 定义压感数据结构体
 typedef struct {
-    int16_t pressure;    // 压感值
+    uint16_t pressure;    // 压感值 (0-65535)
 } __attribute__((packed)) PressureData_t;
 
 // 定义鼠标按键状态结构体

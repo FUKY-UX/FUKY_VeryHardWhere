@@ -34,7 +34,7 @@ SharedState_t;
 #define M_CLICK    18
 #define L_CLICK    16
 #define R_CLICK    17
-#define BTN_HISTORY_SIZE 20 //按键均值消抖
+#define BTN_HISTORY_SIZE 10 //按键均值消抖
 //#define MOVE_HISTORY_SIZE 5  // 移动均值消抖，5个样本够了-------弃用，增加延迟和粘滞手感
 #define MOVE_BUFFER_SIZE 3    // 连续相同负值的判定阈值
 #define FUKY_SPI_HOST    SPI2_HOST
@@ -65,6 +65,7 @@ SharedState_t shared_state =
 // GPIO 10 -> ADC1_CH9
 // 可以在ESP-IDF文档中查找：https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/adc.html
 
+//该计算方式已经验证过，没有问题，舒适化只要用户按压一下就完事了
 // 更新压敏电阻历史值
 void update_pressure_history(int adc_raw) {
     // 忽略明显异常的值
@@ -89,44 +90,37 @@ void update_pressure_history(int adc_raw) {
     }
 }
 
-// 计算压力百分比
-uint32_t calculate_pressure_percentage(int adc_raw) {
+// 计算压力值并映射到uint16_t全范围
+uint16_t calculate_pressure_percentage(int adc_raw) {
     // 如果ADC值超出范围，返回0
     if (adc_raw > shared_state.adc_max_value || 
         adc_raw < shared_state.adc_min_value) {
         return 0;
     }
-    
     // 计算相对于最小值的偏移量
     int delta = shared_state.adc_max_value - adc_raw;
     
-    // 计算百分比 (0-100%)
-    uint32_t percentage = (delta * 100) / shared_state.adc_max_delta;
+    // 计算百分比并映射到uint16_t全范围 (0-65535)
+    uint16_t mapped_value = (delta * 65535) / shared_state.adc_max_delta;
     
-    // 限制最大值为100
-    if (percentage > 100) 
-    {
-        percentage = 100;
-    }
-    
-    return percentage;
+    return mapped_value;
 }
 
 // 读取压敏电阻的值并返回
-uint32_t read_pressure_sensor(void) {
-    // 读取ADC原始值 - 使用ADC1_CHANNEL_1，对应GPIO 2
-    int adc_raw = adc1_get_raw(ADC1_CHANNEL_1); // PRESS引脚对应的ADC通道
+uint16_t read_pressure_sensor(void) {
+
+    int adc_raw = adc1_get_raw(ADC1_CHANNEL_1);
     
     // 更新历史值
     update_pressure_history(adc_raw);
     
     // 计算压力百分比
-    uint32_t pressure_percentage = calculate_pressure_percentage(adc_raw);
+    uint16_t pressure_percentage = calculate_pressure_percentage(adc_raw);
     
     // 打印原始ADC值和压力百分比
-    //printf("压敏电阻原始ADC值: %d, 压力百分比: %lu%%\n", adc_raw, pressure_percentage);
+    printf("压敏电阻原始ADC值: %d, 压力百分比: %u\n", adc_raw, pressure_percentage);
     
-    return adc_raw;
+    return pressure_percentage;
 }
 
 void Main_Init(void);
@@ -189,35 +183,38 @@ void MouseTask(void *pvParameters)
         IsStop = (local_raw_x == 0) && (local_raw_y == 0);
         state->IsMouseStop = IsStop;
         //====== 移动状态更新👆 ======//
+        uint16_t pressure = read_pressure_sensor();
         if(local_IsMouseFloating)
         {
+            SendPressureData(pressure);
             SendButtonState(button_state);
             //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
-            esp_rom_delay_us(1500);
+            esp_rom_delay_us(800);
             continue;
         }
+            SendPressureData(pressure);
         send_mouse_value(button_state,local_raw_x,local_raw_y);
         //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
-        esp_rom_delay_us(1500);
+        esp_rom_delay_us(800);
         // 正常就只用HID发送按钮
     }
         
 
 }
-// 压敏电阻读取任务，返回压力百分比
-int16_t PressureTask() 
+// 压敏电阻读取任务，返回压力值
+uint16_t PressureTask() 
 {
         // 读取压敏电阻值，添加保护措施
         int adc_raw = adc1_get_raw(ADC1_CHANNEL_1);
-        int16_t pressure_percentage = 0;
+        uint16_t pressure_value = 0;
         
         // 检查ADC值是否在有效范围内（0-4095）
         if (adc_raw >= 0 && adc_raw <= 4095) {
             // 更新历史值
             update_pressure_history(adc_raw);
             
-            // 计算压力百分比
-            pressure_percentage = (int16_t)calculate_pressure_percentage(adc_raw);
+            // 计算压力值
+            pressure_value = calculate_pressure_percentage(adc_raw);
             
         } 
         else 
@@ -225,7 +222,7 @@ int16_t PressureTask()
             ESP_LOGE("PRESSURE", "读取到无效的ADC值");
         }
         
-        return pressure_percentage;
+        return pressure_value;
 }
 
 void IMUTask(void *pvParameters) 
@@ -235,15 +232,18 @@ void IMUTask(void *pvParameters)
     IMUData_t local_imu_data;
     SharedState_t *state = (SharedState_t *)pvParameters;
     
-    // 初始化
-    state->adc_max_value = adc1_get_raw(ADC1_CHANNEL_1); // PRESS引脚对应的ADC通道
-    state->adc_min_value = adc1_get_raw(ADC1_CHANNEL_1);
+    // 初始化压力传感器参考值，确保最大值和最小值不同
+    int initial_value = adc1_get_raw(ADC1_CHANNEL_1);
+    state->adc_max_value = initial_value + 100; // 设置一个初始最大值
+    state->adc_min_value = initial_value - 100; // 设置一个初始最小值
+    state->adc_max_delta = 200; // 初始差值
 
     while (1) 
     {
         // 读取IMU数据,无论如何都得一直读取，不然数据会挤爆缓存
         local_imu_data = bno080_Function();
-        SendPressureData(PressureTask());//不浮起来也默认发送
+        // 移除这里的压力数据发送，只在MouseTask中发送
+        // SendPressureData(PressureTask());
 
         //带锁访问共享状态
         if (xSemaphoreTake(state->mutex, 0)) 
