@@ -192,12 +192,13 @@ void MouseTask(void *pvParameters)
         if(local_IsMouseFloating)
         {
             SendButtonState(button_state);
-            vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
+            //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
+            esp_rom_delay_us(1500);
             continue;
         }
         send_mouse_value(button_state,local_raw_x,local_raw_y);
-        vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
-
+        //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
+        esp_rom_delay_us(1500);
         // 正常就只用HID发送按钮
     }
         
