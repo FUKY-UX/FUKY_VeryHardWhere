@@ -118,7 +118,7 @@ uint16_t read_pressure_sensor(void) {
     uint16_t pressure_percentage = calculate_pressure_percentage(adc_raw);
     
     // 打印原始ADC值和压力百分比
-    printf("压敏电阻原始ADC值: %d, 压力百分比: %u\n", adc_raw, pressure_percentage);
+    //printf("压敏电阻原始ADC值: %d, 压力百分比: %u\n", adc_raw, pressure_percentage);
     
     return pressure_percentage;
 }

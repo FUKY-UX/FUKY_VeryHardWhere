@@ -116,8 +116,8 @@ void esp_hidd_send_pressure_value(uint16_t conn_id, uint16_t pressure)
     buffer[1] = pressure & 0xFF;         // 低字节在后
 
     // 打印发送的数据
-    ESP_LOGI("BLE_PRESSURE", "发送压力值: %u (0x%04X), 高字节: 0x%02X, 低字节: 0x%02X", 
-             pressure, pressure, buffer[0], buffer[1]);
+    // ESP_LOGI("BLE_PRESSURE", "发送压力值: %u (0x%04X), 高字节: 0x%02X, 低字节: 0x%02X", 
+    //         pressure, pressure, buffer[0], buffer[1]);
              
     // 检查连接ID是否有效
     if (conn_id != 0xFFFF && imu_env.IMU_gatt_if != ESP_GATT_IF_NONE) {
