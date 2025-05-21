@@ -175,7 +175,6 @@ void MouseTask(void *pvParameters)
         button_state |= (!stable_btn[1]) << 1; // 右键
         button_state |= (!stable_btn[2]) << 2; // 中键
         //====== 按钮状态更新👆 ======//
-
         //====== 移动状态更新👇 ======//
         PAW3805_Function(&local_raw_x, &local_raw_y);
         //ESP_LOGI("鼠标", "X=%d,     Y=%d",local_raw_x,local_raw_y);
@@ -186,15 +185,30 @@ void MouseTask(void *pvParameters)
         uint16_t pressure = read_pressure_sensor();
         if(local_IsMouseFloating)
         {
-            SendPressureData(pressure);
+            // 根据 local_IsMouseFloating 设置第四位 (bit3)
+            button_state |=  1 << 3;
+            
+            if ((button_state & (1 << 0))||(button_state & (1 << 1))) 
+            {  
+                SendPressureData(pressure);
+                //ESP_LOGI("浮起时按键按下了", "=%d",button_state);
+            }
             SendButtonState(button_state);
             //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
             esp_rom_delay_us(800);
             continue;
         }
+        button_state |= 0 << 3;
+        // 判断左键是否按下（检查第0位）
+        if ((button_state & (1 << 0))||(button_state & (1 << 1))) 
+        {  
             SendPressureData(pressure);
+            //ESP_LOGI("正常时按键按下了", "=%d",button_state);
+        }
         send_mouse_value(button_state,local_raw_x,local_raw_y);
         //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
+        //ESP_LOGI("按键", "=%d",button_state);
+
         esp_rom_delay_us(800);
         // 正常就只用HID发送按钮
     }

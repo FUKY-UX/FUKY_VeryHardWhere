@@ -131,6 +131,5 @@ void esp_hidd_send_button_state(uint16_t conn_id, uint8_t button_state)
 
     // 填充按键状态数据
     buffer[0] = button_state;
-
     esp_ble_gatts_send_indicate(imu_env.IMU_gatt_if, conn_id, imu_env.Button_State_att_handle, sizeof(buffer), buffer, false);
 }
