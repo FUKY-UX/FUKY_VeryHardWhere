@@ -34,7 +34,7 @@ SharedState_t;
 #define M_CLICK    18
 #define L_CLICK    16
 #define R_CLICK    17
-#define BTN_HISTORY_SIZE 10 //按键均值消抖
+#define BTN_HISTORY_SIZE 5 //按键均值消抖
 //#define MOVE_HISTORY_SIZE 5  // 移动均值消抖，5个样本够了-------弃用，增加延迟和粘滞手感
 #define MOVE_BUFFER_SIZE 3    // 连续相同负值的判定阈值
 #define FUKY_SPI_HOST    SPI2_HOST
@@ -128,6 +128,7 @@ void Main_Init(void);
 void MouseTask(void *pvParameters) 
 {
     bool IsStop;//用于判断鼠标是不是停下了
+    bool IsFirstDrop = false;
     int8_t local_raw_x = 0, local_raw_y = 0;
     SharedState_t *state = (SharedState_t *)pvParameters;
     //按钮逻辑
@@ -136,6 +137,12 @@ void MouseTask(void *pvParameters)
     uint8_t history_index = 0;
     bool stable_btn[3] = {1, 1, 1}; // 稳定后的状态
     bool local_IsMouseFloating = false;
+
+    // 压力数据相关变量
+    TickType_t lastPressureSendTime = 0;
+    const TickType_t pressureSendInterval = pdMS_TO_TICKS(20); // 20ms发送间隔
+    uint32_t pressureSum = 0;
+    uint16_t pressureSampleCount = 0;
 
     while (1) 
     {
@@ -182,32 +189,49 @@ void MouseTask(void *pvParameters)
         IsStop = (local_raw_x == 0) && (local_raw_y == 0);
         state->IsMouseStop = IsStop;
         //====== 移动状态更新👆 ======//
+        //====== PRESSURE👇 ======//
+        uint16_t currentPressure = read_pressure_sensor();
+        pressureSum += currentPressure;
+        pressureSampleCount++;
+        TickType_t currentTime = xTaskGetTickCount();        // 检查是否达到发送时间
+        if (currentTime - lastPressureSendTime >= pressureSendInterval) 
+        {
+            if (pressureSampleCount > 0) 
+            {
+                uint16_t avgPressure = pressureSum / pressureSampleCount;
+                SendPressureData(avgPressure);
+                // 重置累积器
+                pressureSum = 0;
+                pressureSampleCount = 0;
+                lastPressureSendTime = currentTime;
+            }
+        }
+        //====== PRESSURE👆 ======//
         uint16_t pressure = read_pressure_sensor();
         if(local_IsMouseFloating)
         {
+            IsFirstDrop = true;
             // 根据 local_IsMouseFloating 设置第四位 (bit3)
             button_state |=  1 << 3;
-            
-            if ((button_state & (1 << 0))||(button_state & (1 << 1))) 
-            {  
-                SendPressureData(pressure);
-                //ESP_LOGI("浮起时按键按下了", "=%d",button_state);
-            }
+            //ESP_LOGI("浮起状态", "按钮状态=%d (二进制: %04b)", button_state, button_state); // 添加日志
             SendButtonState(button_state);
             //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
             esp_rom_delay_us(800);
             continue;
         }
-        button_state |= 0 << 3;
-        // 判断左键是否按下（检查第0位）
-        if ((button_state & (1 << 0))||(button_state & (1 << 1))) 
-        {  
-            SendPressureData(pressure);
-            //ESP_LOGI("正常时按键按下了", "=%d",button_state);
+
+        button_state &= ~(1 << 3); // 如果是悬浮状态的话，清除bit3
+        if(IsFirstDrop)
+        {
+            SendButtonState(0x00);
+            IsFirstDrop = false;
         }
+        // 判断左键是否按下（检查第0位）
+        SendPressureData(pressure);
+        //ESP_LOGI("正常时按键按下了", "=%d",button_state);
         send_mouse_value(button_state,local_raw_x,local_raw_y);
-        //vTaskDelay(pdMS_TO_TICKS(1));        //过频繁地访问光电会导致芯片重启和读数异常,因为burst不可用，目前回报率提不上来
         //ESP_LOGI("按键", "=%d",button_state);
+        //ESP_LOGI("浮起状态", "按钮状态=%d (二进制: %04b)", button_state, button_state); // 添加日志
 
         esp_rom_delay_us(800);
         // 正常就只用HID发送按钮

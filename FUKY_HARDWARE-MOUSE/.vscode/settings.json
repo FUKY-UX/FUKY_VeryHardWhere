@@ -3,7 +3,7 @@
     "idf.espIdfPathWin": "D:/VSCodeHardWare/Espressif/frameworks/esp-idf-v5.2.3/",
     "idf.toolsPathWin": "D:\\VSCodeHardWare\\Espressif",
     "C_Cpp.errorSquiggles": "disabled",
-    "idf.portWin": "COM9",
+    "idf.portWin": "COM6",
     "idf.flashType": "UART",
     "idf.openOcdConfigs": [
         "board/esp32s3-builtin.cfg"
