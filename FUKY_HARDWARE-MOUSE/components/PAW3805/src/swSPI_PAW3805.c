@@ -156,7 +156,7 @@ void read_motion_data_8bit(int8_t *dx, int8_t *dy)
 
     *dx = x_lo;
     *dy = y_lo;
-    //ESP_LOGI("Motion", "dx=%d, dy=%d", *dx, *dy);
+    ESP_LOGI("Motion", "dx=%d, dy=%d", *dx, *dy);
 }
 
 

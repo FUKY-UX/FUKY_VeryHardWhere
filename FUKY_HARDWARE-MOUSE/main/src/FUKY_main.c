@@ -26,14 +26,14 @@ SharedState_t;
 
 
 //======================================初始化====================================//
-#define MOSI    6
-#define MISO    3
-#define SCLK    4
-#define PRESS   2
+#define MOSI    14 
+#define MISO    11
+#define SCLK    12
+#define PRESS   9 
 
-#define M_CLICK    18
-#define L_CLICK    16
-#define R_CLICK    17
+#define M_CLICK    3                       
+#define L_CLICK    5
+#define R_CLICK    4
 #define BTN_HISTORY_SIZE 5 //按键均值消抖
 //#define MOVE_HISTORY_SIZE 5  // 移动均值消抖，5个样本够了-------弃用，增加延迟和粘滞手感
 #define MOVE_BUFFER_SIZE 3    // 连续相同负值的判定阈值
@@ -365,9 +365,9 @@ void app_main(void)
 void Main_Init()
 {
     // 禁用晶振功能
-    rtc_gpio_deinit(GPIO_NUM_16);
+    //rtc_gpio_deinit(GPIO_NUM_16);
     // 配置为普通GPIO
-    gpio_reset_pin(GPIO_NUM_16);
+    //gpio_reset_pin(GPIO_NUM_16);
     
     // 确保PRESS引脚（GPIO 2）配置为ADC模式
     gpio_reset_pin(PRESS);
@@ -390,7 +390,7 @@ void Main_Init()
     // ADC_ATTEN_DB_2_5: 满量程电压 1.5V
     // ADC_ATTEN_DB_6: 满量程电压 2.2V
     // ADC_ATTEN_DB_11: 满量程电压 3.9V
-    adc1_config_channel_atten(ADC1_CHANNEL_1, ADC_ATTEN_DB_11);
+    adc1_config_channel_atten(ADC1_CHANNEL_8, ADC_ATTEN_DB_11);
     
     // 等待ADC稳定
     vTaskDelay(pdMS_TO_TICKS(10));

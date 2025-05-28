@@ -11,12 +11,12 @@
 
 
 // 引脚定义
-#define BNO_CS          5
-#define BNO_INTN        9
-#define BNO_RESET       10
-#define IMU_PS0         11
-#define IMU_PS1         12
-
+#define BNO_CS          13
+#define BNO_INTN        17
+#define BNO_RESET       18
+#define IMU_PS0         19
+#define IMU_PS1         20
+#define IMU_BOOT        21
 // BNO080 SPI配置
 #define BNO_SPICLK_SPEED   3000000  // 3MHz，不超过手册规定的最大值
 #define SPI_MODE        3        // CPOL=1, CPHA=1

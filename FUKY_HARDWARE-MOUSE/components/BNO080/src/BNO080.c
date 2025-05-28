@@ -739,7 +739,7 @@ bool bno080_init(spi_host_device_t HOST) {
 
     // 初始化引脚状态
     gpio_set_level(BNO_CS, 1);
-
+    //gpio_set_level(IMU_BOOT, 1)
 
     // 配置SPI
     spi_device_interface_config_t devcfg = {
