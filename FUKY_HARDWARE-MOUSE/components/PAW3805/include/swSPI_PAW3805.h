@@ -11,10 +11,12 @@
 #include "freertos/task.h"      // 包含 vTaskDelay 的声明
 #include "driver/spi_master.h"  //不底层模拟了
 // 定义引脚
-#define OPT_CS    19
-#define OPT_SCLK  20
-#define OPT_SDIO  21
-#define REG_RST   8
+#define OPT_CS 34
+#define OPT_SCLK 35
+#define OPT_SDIO 36
+#define OPT_MOTION 37 
+#define REG_RST 38 
+//#define REG_RST   8 
 
 // 寄存器地址
 #define REG_CONFIG         0x06

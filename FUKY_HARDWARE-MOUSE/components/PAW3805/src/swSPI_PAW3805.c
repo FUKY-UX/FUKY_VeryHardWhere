@@ -136,7 +136,7 @@ void read_motion_data(int16_t *dx, int16_t *dy)
 
     *dx = (x_hi << 8) | (uint8_t)x_lo;
     *dy = (y_hi << 8) | (uint8_t)y_lo;
-    //ESP_LOGI("Motion", "dx=%d, dy=%d", *dx, *dy);
+    ESP_LOGI("Motion", "dx=%d, dy=%d", *dx, *dy);
 
 }
 

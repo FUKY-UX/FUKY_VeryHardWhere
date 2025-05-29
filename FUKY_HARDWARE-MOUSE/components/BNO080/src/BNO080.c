@@ -545,12 +545,12 @@ void setReports_Calibration(void) {
 }
 
 void setReports(void) {
-  if (enableRotationVector(6500) == true) {ESP_LOGI("BNO080", "内部融合旋转量报告启用");
+  if (enableRotationVector(10000) == true) {ESP_LOGI("BNO080", "内部融合旋转量报告启用");
   } else {
       ESP_LOGE("BNO080", "内部融合旋转量报告启用失败");
   }
-  //vTaskDelay(pdMS_TO_TICKS(100));
-  if (enableLinearAccelerometer(2500) == true) {ESP_LOGI("BNO080", "加速度报告启用");
+  vTaskDelay(pdMS_TO_TICKS(100));
+  if (enableLinearAccelerometer(10000) == true) {ESP_LOGI("BNO080", "加速度报告启用");
   } else {
       ESP_LOGE("BNO080", "加速度报告启用失败");
   }
@@ -790,20 +790,20 @@ bool bno080_init(spi_host_device_t HOST) {
 
     // 打印产品信息
     ESP_LOGI("BNO080初始化", "验证成功，储存的报告数量为:%u",prodIds.numEntries);
-    //sh2_ProductId_t *p = &prodIds.entry[0];
-    // ESP_LOGI("BNO080初始化", "|第1份报告为");
-    // ESP_LOGI("BNO080初始化", "|最近一次复位的原因: %u", p->resetCause);
-    // ESP_LOGI("BNO080初始化", "|固件主版本号: %u", p->swVersionMajor);
-    // ESP_LOGI("BNO080初始化", "|固件次版本号: %u", p->swVersionMinor);
-    // ESP_LOGI("BNO080初始化", "|固件补丁版本号: %u", p->swVersionPatch);
-    // ESP_LOGI("BNO080初始化", "|软件部件号: %"PRIu32, p->swPartNumber);
-    // ESP_LOGI("BNO080初始化", "|软件构建号: %"PRIu32, p->swBuildNumber);
-    // ESP_LOGI("BNO080初始化", "|保留位: %u", p->reserved0);
-    // ESP_LOGI("BNO080初始化", "|保留位: %u\n", p->reserved1);
+    sh2_ProductId_t *p = &prodIds.entry[0];
+    ESP_LOGI("BNO080初始化", "|第1份报告为");
+    ESP_LOGI("BNO080初始化", "|最近一次复位的原因: %u", p->resetCause);
+    ESP_LOGI("BNO080初始化", "|固件主版本号: %u", p->swVersionMajor);
+    ESP_LOGI("BNO080初始化", "|固件次版本号: %u", p->swVersionMinor);
+    ESP_LOGI("BNO080初始化", "|固件补丁版本号: %u", p->swVersionPatch);
+    ESP_LOGI("BNO080初始化", "|软件部件号: %"PRIu32, p->swPartNumber);
+    ESP_LOGI("BNO080初始化", "|软件构建号: %"PRIu32, p->swBuildNumber);
+    ESP_LOGI("BNO080初始化", "|保留位: %u", p->reserved0);
+    ESP_LOGI("BNO080初始化", "|保留位: %u\n", p->reserved1);
     
     // 注册传感器回调
     sh2_setSensorCallback(sensorHandler, NULL);
-    Calibrate_button.onButtonPressed=bno080_StartCalibrate;
+    //Calibrate_button.onButtonPressed=bno080_StartCalibrate;
     //SetReport_Test();
     ESP_LOGI("BNO080", "初始化完成");
     ESP_LOGI("BNO080", "正在启用传感器报告");
@@ -829,6 +829,8 @@ IMUData_t IRAM_ATTR bno080_Function(void)
   //static uint32_t last_print_time_test = 0;
   if(getSensorEvent() == true)
   {
+    printf("收到IMU回报");
+
     if(getSensorEventID() == SH2_LINEAR_ACCELERATION)
     {
       int16_t x = getLinAccelX();
