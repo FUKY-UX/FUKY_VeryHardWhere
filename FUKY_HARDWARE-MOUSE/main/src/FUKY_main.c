@@ -31,10 +31,11 @@ SharedState_t;
 #define SCLK    12
 #define PRESS   9 
 
-#define M_CLICK    3                       
-#define L_CLICK    5
-#define R_CLICK    4
-#define BTN_HISTORY_SIZE 5 //按键均值消抖
+#define M_CLICK    5                     
+#define L_CLICK    4
+#define R_CLICK    3
+#define LED        45    
+#define BTN_HISTORY_SIZE 3 //按键均值消抖
 //#define MOVE_HISTORY_SIZE 5  // 移动均值消抖，5个样本够了-------弃用，增加延迟和粘滞手感
 #define MOVE_BUFFER_SIZE 3    // 连续相同负值的判定阈值
 #define FUKY_SPI_HOST    SPI2_HOST
@@ -109,7 +110,7 @@ uint16_t calculate_pressure_percentage(int adc_raw) {
 // 读取压敏电阻的值并返回
 uint16_t read_pressure_sensor(void) {
 
-    int adc_raw = adc1_get_raw(ADC1_CHANNEL_1);
+    int adc_raw = adc1_get_raw(ADC1_CHANNEL_8);
     
     // 更新历史值
     update_pressure_history(adc_raw);
@@ -159,6 +160,11 @@ void MouseTask(void *pvParameters)
             gpio_get_level(R_CLICK),
             gpio_get_level(M_CLICK)
         };
+
+        //printf("Current BTN Status: L=%d R=%d M=%d\n", 
+        //current_btn[0],  // 左键
+        //current_btn[1],  // 右键
+        //current_btn[2]); // 中键
 
         // 更新历史记录（循环缓冲区）
         for(int i=0; i<3; i++) 
@@ -253,7 +259,6 @@ uint16_t PressureTask()
             
             // 计算压力值
             pressure_value = calculate_pressure_percentage(adc_raw);
-            
         } 
         else 
         {
@@ -281,7 +286,6 @@ void IMUTask(void *pvParameters)
         // 读取IMU数据,无论如何都得一直读取，不然数据会挤爆缓存
         local_imu_data = bno080_Function();
         // 移除这里的压力数据发送，只在MouseTask中发送
-        // SendPressureData(PressureTask());
 
         //带锁访问共享状态
         if (xSemaphoreTake(state->mutex, 0)) 
@@ -372,6 +376,24 @@ void Main_Init()
     // 确保PRESS引脚（GPIO 2）配置为ADC模式
     gpio_reset_pin(PRESS);
     
+        // 初始化 GPIO（如果还没初始化的话）
+    gpio_config_t in_conf = {
+        .pin_bit_mask = (1ULL << M_CLICK) | (1ULL << L_CLICK) | (1ULL << R_CLICK),  
+        .mode = GPIO_MODE_INPUT,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,     // 禁用中断
+    };
+    gpio_config(&in_conf);
+
+        // 初始化 GPIO（如果还没初始化的话）
+    gpio_config_t LED_conf = {
+        .pin_bit_mask = (1ULL << LED),  
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,     // 禁用中断
+    };
+    gpio_config(&LED_conf);
+    gpio_set_level(LED, 1);
     // 配置GPIO 2为模拟输入模式，禁用其他功能
     gpio_config_t adc_gpio_config = {
         .pin_bit_mask = (1ULL << PRESS),
@@ -404,13 +426,5 @@ void Main_Init()
         .max_transfer_sz = 0};
     spi_bus_initialize(FUKY_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);// SPI总线初始化
 
-    // 初始化 GPIO（如果还没初始化的话）
-    gpio_config_t in_conf = {
-        .pin_bit_mask = (1ULL << M_CLICK) | (1ULL << L_CLICK) | (1ULL << R_CLICK),  
-        .mode = GPIO_MODE_INPUT,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,     // 禁用中断
-    };
-    gpio_config(&in_conf);
-    gpio_install_isr_service(0); //引脚中断服务
+
 }
